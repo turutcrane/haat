@@ -34,3 +34,15 @@ Hello <span id="pkgname"></span>!!
 	h.Render(os.Stdout)
 }
 ```
+
+Output:
+```
+<!DOCTYPE html><html><head>
+<title>EC2 Instances</title>
+</head>
+<body>
+Hello <span id="pkgname">haat</span>!!
+
+
+</body></html>
+```
