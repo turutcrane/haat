@@ -18,7 +18,7 @@ func main() {
 <!DOCTYPE html>
 <html>
 <head>
-<title>EC2 Instances</title>
+<title>Hello haat</title>
 </head>
 <body>
 Hello <span id="pkgname"></span>!!
@@ -38,7 +38,7 @@ Hello <span id="pkgname"></span>!!
 Output:
 ```
 <!DOCTYPE html><html><head>
-<title>EC2 Instances</title>
+<title>Hello haat</title>
 </head>
 <body>
 Hello <span id="pkgname">haat</span>!!
