@@ -216,8 +216,56 @@ func (n *Node) HasAttrValueLower(key, val string) bool {
 }
 
 // Render renders the node to the given writer.
-func (n *Node) Render(w io.Writer) error {
+func (n *Node) Render(w io.Writer, checker ...Checker) error {
+	for _, c := range checker {
+		if err := c(n); err != nil {
+			return err
+		}
+	}
 	return html.Render(w, (*html.Node)(n))
+}
+
+func (n *Node) GetId() string {
+	for _, a := range n.Attr {
+		if a.Key == "id" {
+			return a.Val
+		}
+	}
+	return ""
+}
+
+// Checker is a function that checks the node.
+type Checker func(*Node) error
+
+func IdDuplicateCheck(n *Node) error {
+	ids := map[string]struct{}{}
+	for e := range n.Query("[id]") {
+		id := e.GetId()
+		if _, ok := ids[id]; ok {
+			return fmt.Errorf("duplicate id: %s", id)
+		}
+		ids[id]=struct{}{}
+	}
+	return nil
+}
+
+func IdMissingCheck(n *Node) error {
+	for e := range n.Query("[id]") {
+		if e.GetId() == "" {
+			return fmt.Errorf("missing id")
+		}
+	}
+	return nil
+}
+
+func IdHasBlankCheck(n *Node) error {
+	for e := range n.Query("[id]") {
+		id := e.GetId()
+		if strings.Contains(id, " ") {
+			return fmt.Errorf("id has blank: %s", id)
+		}
+	}
+	return nil
 }
 
 // TypeString returns the string representation of the node type.
