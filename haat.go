@@ -100,6 +100,15 @@ func AttrHref(u url.URL) Attribute {
 	return Attr("href", u.String())
 }
 
+func AttrId(id string) Attribute {
+	return Attr("id", id)
+}
+
+func (n *Node) SetClass(class string) *Node {
+	c := n.GetAttr("class")
+	return n.SetA(Attr("class", strings.Join([]string{c, class}, " ")))
+}
+
 // JsLetString creates a JavaScript let statement with the given name and value.
 func JsLetString(name, val string) string {
 	return "let " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";"
@@ -225,7 +234,16 @@ func (n *Node) Render(w io.Writer, checker ...Checker) error {
 	return html.Render(w, (*html.Node)(n))
 }
 
-func (n *Node) GetId() string {
+func (n *Node) GetAttr(key string) string {
+	for _, a := range n.Attr {
+		if a.Key == key {
+			return a.Val
+		}
+	}
+	return ""
+}
+
+func (n *Node) Id() string {
 	for _, a := range n.Attr {
 		if a.Key == "id" {
 			return a.Val
@@ -240,7 +258,7 @@ type Checker func(*Node) error
 func IdDuplicateCheck(n *Node) error {
 	ids := map[string]struct{}{}
 	for e := range n.Query("[id]") {
-		id := e.GetId()
+		id := e.Id()
 		if _, ok := ids[id]; ok {
 			return fmt.Errorf("duplicate id: %s", id)
 		}
@@ -251,7 +269,7 @@ func IdDuplicateCheck(n *Node) error {
 
 func IdMissingCheck(n *Node) error {
 	for e := range n.Query("[id]") {
-		if e.GetId() == "" {
+		if e.Id() == "" {
 			return fmt.Errorf("missing id")
 		}
 	}
@@ -260,7 +278,7 @@ func IdMissingCheck(n *Node) error {
 
 func IdHasBlankCheck(n *Node) error {
 	for e := range n.Query("[id]") {
-		id := e.GetId()
+		id := e.Id()
 		if strings.Contains(id, " ") {
 			return fmt.Errorf("id has blank: %s", id)
 		}
