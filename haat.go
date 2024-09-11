@@ -58,7 +58,8 @@ func Attr(key, value string) Attribute {
 	})
 }
 
-// A sets the attributes of the node to the given attributes.
+// A replaces all attributes with the attributes specified in the arguments. 
+// If there are duplicate keys, it sets the latter value.
 func (n *Node) A(attrs ...Attribute) *Node {
 	slices.SortStableFunc(attrs, func(a, b Attribute) int {
 		return strings.Compare(lower(a.Key), lower(b.Key))
@@ -80,7 +81,8 @@ func (n *Node) A(attrs ...Attribute) *Node {
 	return n
 }
 
-// SetA sets the attributes of the node to the given attributes.
+// SetA appends the given attributes to the attributes of the node. 
+// If keys are already in the attributes of the node, the values are overwritten.
 func (n *Node) SetA(attr ...Attribute) *Node {
 	var attrs []Attribute
 	for _, a := range n.Attr {
@@ -100,7 +102,7 @@ func AttrHref(u url.URL) Attribute {
 	return Attr("href", u.String())
 }
 
-func AttrId(id string) Attribute {
+func AttrID(id string) Attribute {
 	return Attr("id", id)
 }
 
@@ -243,7 +245,7 @@ func (n *Node) GetAttr(key string) string {
 	return ""
 }
 
-func (n *Node) Id() string {
+func (n *Node) ID() string {
 	for _, a := range n.Attr {
 		if a.Key == "id" {
 			return a.Val
@@ -255,10 +257,10 @@ func (n *Node) Id() string {
 // Checker is a function that checks the node.
 type Checker func(*Node) error
 
-func IdDuplicateCheck(n *Node) error {
+func IDDuplicateCheck(n *Node) error {
 	ids := map[string]struct{}{}
 	for e := range n.Query("[id]") {
-		id := e.Id()
+		id := e.ID()
 		if _, ok := ids[id]; ok {
 			return fmt.Errorf("duplicate id: %s", id)
 		}
@@ -267,18 +269,18 @@ func IdDuplicateCheck(n *Node) error {
 	return nil
 }
 
-func IdMissingCheck(n *Node) error {
+func IDMissingCheck(n *Node) error {
 	for e := range n.Query("[id]") {
-		if e.Id() == "" {
+		if e.ID() == "" {
 			return fmt.Errorf("missing id")
 		}
 	}
 	return nil
 }
 
-func IdHasBlankCheck(n *Node) error {
+func IDHasBlankCheck(n *Node) error {
 	for e := range n.Query("[id]") {
-		id := e.Id()
+		id := e.ID()
 		if strings.Contains(id, " ") {
 			return fmt.Errorf("id has blank: %s", id)
 		}
