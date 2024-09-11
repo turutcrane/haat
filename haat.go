@@ -102,10 +102,13 @@ func AttrHref(u url.URL) Attribute {
 	return Attr("href", u.String())
 }
 
+// AttrID creates a new attribute with the key "id" and the given value.
 func AttrID(id string) Attribute {
 	return Attr("id", id)
 }
 
+// SetClass setsthe given class to the class attribute of the node.
+// No class duplication check is performed.
 func (n *Node) SetClass(class string) *Node {
 	c := n.GetAttr("class")
 	return n.SetA(Attr("class", strings.Join([]string{c, class}, " ")))
@@ -236,6 +239,7 @@ func (n *Node) Render(w io.Writer, checker ...Checker) error {
 	return html.Render(w, (*html.Node)(n))
 }
 
+// GetAttr returns the value of the attribute with the given key.
 func (n *Node) GetAttr(key string) string {
 	for _, a := range n.Attr {
 		if a.Key == key {
@@ -245,6 +249,7 @@ func (n *Node) GetAttr(key string) string {
 	return ""
 }
 
+// ID returns the value of the id attribute.
 func (n *Node) ID() string {
 	for _, a := range n.Attr {
 		if a.Key == "id" {
@@ -257,6 +262,7 @@ func (n *Node) ID() string {
 // Checker is a function that checks the node.
 type Checker func(*Node) error
 
+// IDDuplicateCheck checks if the node has duplicate id attributes.
 func IDDuplicateCheck(n *Node) error {
 	ids := map[string]struct{}{}
 	for e := range n.Query("[id]") {
@@ -269,6 +275,7 @@ func IDDuplicateCheck(n *Node) error {
 	return nil
 }
 
+// IDMissingCheck checks if the node has id without value.
 func IDMissingCheck(n *Node) error {
 	for e := range n.Query("[id]") {
 		if e.ID() == "" {
@@ -278,6 +285,7 @@ func IDMissingCheck(n *Node) error {
 	return nil
 }
 
+// IDHasBlankCheck checks if the node has id with blank.
 func IDHasBlankCheck(n *Node) error {
 	for e := range n.Query("[id]") {
 		id := e.ID()
