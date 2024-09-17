@@ -109,19 +109,27 @@ func AttrID(id string) Attribute {
 
 // SetClass setsthe given class to the class attribute of the node.
 // No class duplication check is performed.
-func (n *Node) SetClass(class string) *Node {
-	c := n.GetAttr("class")
-	return n.SetA(Attr("class", strings.Join([]string{c, class}, " ")))
+func (n *Node) SetClass(class ...string) *Node {
+	old := n.GetAttr("class")
+	if old == "" {
+		return n.SetA(Attr("class", strings.Join(class, " ")))
+	}
+	return n.SetA(Attr("class", strings.Join(slices.Concat(strings.Split(old, " "), class), " ")))
 }
 
 // JsLetString creates a JavaScript let statement with the given name and value.
-func JsLetString(name, val string) string {
-	return "let " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";"
+func JsLetString(name, val string) *Node{
+	return Text("let " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";")
 }
 
 // JsConstString creates a JavaScript const statement with the given name and value.
-func JsConstString(name, val string) string {
-	return "const " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";"
+func JsConstString(name, val string) *Node {
+	return Text("const " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";")
+}
+
+// Lf creates a new text node with a line feed.
+func Lf() *Node {
+	return Text("\n")
 }
 
 // Element creates a new element node with the given atom.
@@ -173,13 +181,18 @@ func HtmlParsePageString(s string) (*Node, error) {
 }
 
 // HtmlParseFragment parses the HTML fragment with node context from the given reader.
-func HtmlParseFragment(s io.Reader, node *Node) (*Node, error) {
+func HtmlParseFragment(s io.Reader, node *Node) ([]*Node, error) {
 	n, err := html.ParseFragment(s, (*html.Node)(node))
-	return (*Node)(n[0]), err
+
+	nodes := make([]*Node, len(n))
+	for i := range len(n) {
+		nodes[i] = (*Node)(n[i])
+	}
+	return nodes, err
 }
 
 // HtmlParseFragmentString parses the HTML fragment with node context from the given string.
-func HtmlParseFragmentString(s string, node *Node) (*Node, error) {
+func HtmlParseFragmentString(s string, node *Node) ([]*Node, error) {
 	return HtmlParseFragment(strings.NewReader(s), node)
 }
 
