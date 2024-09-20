@@ -50,6 +50,53 @@ func (n *Node) AppendC(childs ...*Node) *Node {
 	return n
 }
 
+// Remove removes the node from the parent node.
+func Remove(n *Node) {
+	if n.Parent == nil {
+		return
+	}
+	n.Parent.RemoveChild((*html.Node)(n))
+}
+
+// RemoveAttr removes the attribute with the given key from the node.
+func RemoveAttr(n *Node, key string) {
+	attr := make([]html.Attribute, 0, len(n.Attr))
+	for _, a := range n.Attr {
+		if a.Key != key {
+			attr = append(attr, a)
+		}
+	}
+	n.Attr = attr
+}
+
+// RemoveClass removes the class from the class attribute of the node.
+func RemoveClass(n *Node, class string) {
+	classes := strings.Split(n.GetAttr("class"), " ")
+	cs := make([]string, 0, len(classes))
+	for _, c := range classes {
+		if c != class {
+			cs = append(cs, c)
+		}
+	}
+	n.SetA(Attr("class", strings.Join(cs, " ")))
+}
+
+// Clone creates a deep copy of the node.
+func (n *Node) Clone() *Node {
+	m := &Node{}
+	m.Type = n.Type
+	m.DataAtom = n.DataAtom
+	m.Data = n.Data
+	m.Namespace = n.Namespace
+	m.Attr = make([]html.Attribute, len(n.Attr))
+	copy(m.Attr, n.Attr)
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		d := (*Node)(c).Clone()
+		(*html.Node)(m).AppendChild((*html.Node)(d))
+	}
+	return m
+}
+
 // Attr creates a new attribute with the given key and value.
 func Attr(key, value string) Attribute {
 	return (Attribute)(html.Attribute{
@@ -58,7 +105,7 @@ func Attr(key, value string) Attribute {
 	})
 }
 
-// A replaces all attributes with the attributes specified in the arguments. 
+// A replaces all attributes with the attributes specified in the arguments.
 // If there are duplicate keys, it sets the latter value.
 func (n *Node) A(attrs ...Attribute) *Node {
 	slices.SortStableFunc(attrs, func(a, b Attribute) int {
@@ -81,7 +128,7 @@ func (n *Node) A(attrs ...Attribute) *Node {
 	return n
 }
 
-// SetA appends the given attributes to the attributes of the node. 
+// SetA appends the given attributes to the attributes of the node.
 // If keys are already in the attributes of the node, the values are overwritten.
 func (n *Node) SetA(attr ...Attribute) *Node {
 	var attrs []Attribute
@@ -107,9 +154,9 @@ func AttrID(id string) Attribute {
 	return Attr("id", id)
 }
 
-// SetClass setsthe given class to the class attribute of the node.
+// SetClasses setsthe given class to the class attribute of the node.
 // No class duplication check is performed.
-func (n *Node) SetClass(class ...string) *Node {
+func (n *Node) SetClasses(class ...string) *Node {
 	old := n.GetAttr("class")
 	if old == "" {
 		return n.SetA(Attr("class", strings.Join(class, " ")))
@@ -117,13 +164,13 @@ func (n *Node) SetClass(class ...string) *Node {
 	return n.SetA(Attr("class", strings.Join(slices.Concat(strings.Split(old, " "), class), " ")))
 }
 
-// JsLetString creates a JavaScript let statement with the given name and value.
-func JsLetString(name, val string) *Node{
+// JsLetExpr creates a JavaScript let statement with the given name and value.
+func JsLetExpr(name, val string) *Node {
 	return Text("let " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";")
 }
 
-// JsConstString creates a JavaScript const statement with the given name and value.
-func JsConstString(name, val string) *Node {
+// JsConstExpr creates a JavaScript const statement with the given name and value.
+func JsConstExpr(name, val string) *Node {
 	return Text("const " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";")
 }
 
@@ -283,7 +330,7 @@ func IDDuplicateCheck(n *Node) error {
 		if _, ok := ids[id]; ok {
 			return fmt.Errorf("duplicate id: %s", id)
 		}
-		ids[id]=struct{}{}
+		ids[id] = struct{}{}
 	}
 	return nil
 }
