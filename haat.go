@@ -59,7 +59,7 @@ func Remove(n *Node) {
 }
 
 // RemoveAttr removes the attribute with the given key from the node.
-func RemoveAttr(n *Node, key string) {
+func (n *Node) RemoveAttr(key string) *Node{
 	attr := make([]html.Attribute, 0, len(n.Attr))
 	for _, a := range n.Attr {
 		if a.Key != key {
@@ -67,10 +67,11 @@ func RemoveAttr(n *Node, key string) {
 		}
 	}
 	n.Attr = attr
+	return n
 }
 
 // RemoveClass removes the class from the class attribute of the node.
-func RemoveClass(n *Node, class string) {
+func (n *Node) RemoveClass(class string) *Node{
 	classes := strings.Split(n.GetAttr("class"), " ")
 	cs := make([]string, 0, len(classes))
 	for _, c := range classes {
@@ -79,6 +80,7 @@ func RemoveClass(n *Node, class string) {
 		}
 	}
 	n.SetA(Attr("class", strings.Join(cs, " ")))
+	return n
 }
 
 // Clone creates a deep copy of the node.
@@ -139,6 +141,7 @@ func (n *Node) SetA(attr ...Attribute) *Node {
 }
 
 // AppendA appends the given attributes to the attributes of the node.
+// No attribute duplication check is performed.
 func (n *Node) AppendA(attr Attribute) *Node {
 	n.Attr = append(n.Attr, html.Attribute{Key: attr.Key, Val: attr.Val})
 	return n
@@ -244,9 +247,9 @@ func HtmlParseFragmentString(s string, node *Node) ([]*Node, error) {
 }
 
 // HasRoot returns true if the node has the given root node as an ancestor.
-func (n *Node) HasRoot(r *Node) bool {
+func (n *Node) HasRoot(root *Node) bool {
 	for p := n.Parent; p != nil; p = p.Parent {
-		if p == (*html.Node)(r) {
+		if p == (*html.Node)(root) {
 			return true
 		}
 	}
@@ -357,7 +360,7 @@ func IDHasBlankCheck(n *Node) error {
 }
 
 // TypeString returns the string representation of the node type.
-func TypeString(n *html.Node) string {
+func TypeString(n *Node) string {
 	switch n.Type {
 	case html.ErrorNode:
 		return "Error"
@@ -378,12 +381,12 @@ func TypeString(n *html.Node) string {
 }
 
 // DumpNode prints the node to the standard output.
-func DumpNode(n *html.Node, indent int, mark string) {
+func DumpNode(n *Node, indent int, mark string) {
 	if n == nil {
 		return
 	}
 	fmt.Printf("T55: %s%*s", mark, indent, "")
 	fmt.Println(TypeString(n), ">"+strings.ReplaceAll(n.Data, "\n", "<LF>")+"<")
-	DumpNode(n.FirstChild, indent+2, "C")
-	DumpNode(n.NextSibling, indent, "S")
+	DumpNode((*Node)(n.FirstChild), indent+2, "C")
+	DumpNode((*Node)(n.NextSibling), indent, "S")
 }
