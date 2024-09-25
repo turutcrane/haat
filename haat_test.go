@@ -24,7 +24,7 @@ Hello <span id="pkgname"></span>!!
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
 	ht2 := ht.Clone()
-	var htBuf, ht2Buf bytes.Buffer	
+	var htBuf, ht2Buf bytes.Buffer
 	if err := ht.Render(&htBuf); err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -39,11 +39,11 @@ Hello <span id="pkgname"></span>!!
 }
 
 func TestSetClasses(t *testing.T) {
-	ht, err := HtmlParseFragmentString(`<p id="foo" class="bar baz">Hello</p>`, Element(atom.Div))
+	ht, err := HtmlParseFragmentString(`<p id="foo" class="bar baz">Hello</p>`, E(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
-	ht[0].SetClasses("bar","baz")
+	ht[0].SetClasses("bar", "baz")
 
 	var buf bytes.Buffer
 	if err := ht[0].Render(&buf); err != nil {
@@ -58,7 +58,7 @@ func TestSetClasses(t *testing.T) {
 }
 
 func TestSetA(t *testing.T) {
-	ht, err := HtmlParseFragmentString(`<p xxx="yyy" id="foo" xxx="zzz">Hello</p>`, Element(atom.Div))
+	ht, err := HtmlParseFragmentString(`<p xxx="yyy" id="foo" xxx="zzz">Hello</p>`, E(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -77,7 +77,7 @@ func TestSetA(t *testing.T) {
 }
 
 func TestRemoveAttr(t *testing.T) {
-	ht, err := HtmlParseFragmentString(`<p id="foo" xxx="aaa" xxx="bbb">Hello</p>`, Element(atom.Div))
+	ht, err := HtmlParseFragmentString(`<p id="foo" xxx="aaa" xxx="bbb">Hello</p>`, E(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -96,7 +96,7 @@ func TestRemoveAttr(t *testing.T) {
 }
 
 func TestRemoveClass(t *testing.T) {
-	ht, err := HtmlParseFragmentString(`<p id="foo" class="bar baz bar">Hello</p>`, Element(atom.Div))
+	ht, err := HtmlParseFragmentString(`<p id="foo" class="bar baz bar">Hello</p>`, E(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
