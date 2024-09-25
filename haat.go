@@ -151,7 +151,7 @@ func (t *Text) Clone() *Text {
 }
 
 func (d *Doctype) Clone() *Doctype {
-	newDoctype :=  &Doctype{
+	newDoctype := &Doctype{
 		Type:      d.Type,
 		Data:      d.Data,
 		Namespace: d.Namespace,
