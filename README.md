@@ -29,7 +29,7 @@ Hello <span id="pkgname"></span>!!
 		log.Panicln(err)
 	}
 	for span := range h.Query("span#pkgname") {
-		span.C(haat.Text("haat"))
+		span.C(haat.T("haat"))
 	}
 	h.Render(os.Stdout)
 }
