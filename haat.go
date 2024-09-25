@@ -237,38 +237,35 @@ func (n *Element) SetClasses(class ...string) *Element {
 }
 
 // JsLetExpr creates a JavaScript let statement with the given name and value.
-func JsLetExpr(name, val string) *Element {
+func JsLetExpr(name, val string) *Text {
 	return T("let " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";")
 }
 
 // JsConstExpr creates a JavaScript const statement with the given name and value.
-func JsConstExpr(name, val string) *Element {
+func JsConstExpr(name, val string) *Text {
 	return T("const " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";")
 }
 
 // Lf creates a new text node with a line feed.
-func Lf() *Element {
+func Lf() *Text {
 	return T("\n")
 }
 
 // E creates a new element node with the given atom.
 func E(a atom.Atom) *Element {
-	return (*Element)(
-		&html.Node{
-			Type:     html.ElementNode,
-			DataAtom: a,
-			Data:     a.String(),
-		})
+	return &Element{
+		Type:     html.ElementNode,
+		DataAtom: a,
+		Data:     a.String(),
+	}
 }
 
 // T creates a new text node with the given text.
-func T(text string) *Element {
-	return (*Element)(
-		&html.Node{
-			Type: html.TextNode,
-			Data: text,
-		},
-	)
+func T(text string) *Text {
+	return &Text{
+		Type: html.TextNode,
+		Data: text,
+	}
 }
 
 type Selector css.Selector
