@@ -269,14 +269,19 @@ func (e *Element) SetClasses(class ...string) *Element {
 	return e.SetA(Attr("class", strings.Join(slices.Concat(strings.Split(old, " "), class), " ")))
 }
 
-// JsLetExpr creates a JavaScript let statement with the given name and value.
-func JsLetExpr(name, val string) *Text {
-	return T("let " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";")
+// JsLetString creates a JavaScript let statement with the given name and value.
+func JsLetString(name, val string) *Text {
+	return T(fmt.Sprintf("let %s = \"%s\";", template.JSEscapeString(name), template.JSEscapeString(val)))
 }
 
-// JsConstExpr creates a JavaScript const statement with the given name and value.
-func JsConstExpr(name, val string) *Text {
-	return T("const " + template.JSEscapeString(name) + " = \"" + template.JSEscapeString(val) + "\";")
+// JsLetString creates a JavaScript let statement with the given name and value.
+func JsLetInt(name string, val int) *Text {
+	return T(fmt.Sprintf("let %s = %d;", template.JSEscapeString(name), val))
+}
+
+// JsConstString creates a JavaScript const statement with the given name and value.
+func JsConstString(name, val string) *Text {
+	return T(fmt.Sprintf("const %s = \"%s\";", template.JSEscapeString(name), template.JSEscapeString(val)))
 }
 
 // Lf creates a new text node with a line feed.
@@ -313,7 +318,6 @@ func ParseHtml(s io.Reader) (*Document, error) {
 	n, err := html.Parse(s)
 	return (*Document)(n), err
 }
-
 
 // ParseHtmlFragment parses the HTML fragment with node context from the given reader.
 func ParseHtmlFragment(s io.Reader, node *Element) ([]*Element, error) {
