@@ -23,6 +23,7 @@ func lower(s string) string {
 	return string(b)
 }
 
+type Document html.Node
 type Element html.Node
 type Text html.Node
 type Doctype html.Node
@@ -32,9 +33,17 @@ type Node interface {
 	NodeType() html.NodeType
 }
 
+type ElementChild interface {
+	ParentElement() *Element
+}
+
 type Attribute html.Attribute
 
 // NodeType returns the node type.
+func (d *Document) NodeType() html.NodeType {
+	return d.Type
+}
+
 func (e *Element) NodeType() html.NodeType {
 	return e.Type
 }
@@ -51,6 +60,19 @@ func (c *Comment) NodeType() html.NodeType {
 	return c.Type
 }
 
+// ParentElement returns the parent element of the node.
+func (e *Element) ParentElement() *Element {
+	return (*Element)(e.Parent)
+}
+
+func (t *Text) ParentElement() *Element {
+	return (*Element)(t.Parent)
+}
+
+func (c *Comment) ParentElement() *Element {
+	return (*Element)(c.Parent)
+}
+
 // ClearContents removes all children of the node.
 func (n *Element) ClearContents() *Element {
 	bn := (*html.Node)(n)
@@ -61,7 +83,7 @@ func (n *Element) ClearContents() *Element {
 }
 
 // C sets the children of the node to the given nodes.
-func (n *Element) C(childs ...Node) *Element {
+func (n *Element) C(childs ...ElementChild) *Element {
 	n.ClearContents()
 	n.AppendC(childs...)
 	return n
@@ -70,9 +92,15 @@ func (n *Element) C(childs ...Node) *Element {
 func convertNode(n Node) *html.Node {
 	var n0 *html.Node
 	switch c := n.(type) {
+	case *Document:
+		n0 = (*html.Node)(c)
 	case *Element:
 		n0 = (*html.Node)(c)
 	case *Text:
+		n0 = (*html.Node)(c)
+	case *Doctype:
+		n0 = (*html.Node)(c)
+	case *Comment:
 		n0 = (*html.Node)(c)
 	}
 
@@ -80,9 +108,10 @@ func convertNode(n Node) *html.Node {
 }
 
 // AppendC appends the given nodes to the children of the node.
-func (e *Element) AppendC(childs ...Node) *Element {
+func (e *Element) AppendC(childs ...ElementChild) *Element {
 	for _, c := range childs {
-		(*html.Node)(e).AppendChild(convertNode(c))
+		n := c.(Node)
+		(*html.Node)(e).AppendChild(convertNode(n))
 	}
 	return e
 }
@@ -139,6 +168,10 @@ func nodeClone(n *html.Node) *html.Node {
 }
 
 // Clone creates a deep copy of the node.
+func (d *Document) Clone() *Document {
+	return (*Document)(nodeClone((*html.Node)(d)))
+}
+
 func (e *Element) Clone() *Element {
 	return (*Element)(nodeClone((*html.Node)(e)))
 }
@@ -275,29 +308,29 @@ func CssMustParse(s string) *Selector {
 	return (*Selector)(css.MustParse(s))
 }
 
-// Select selects the nodes that match the selector.
-func (s *Selector) Select(n *Element) []*Element {
-	nodes := (*css.Selector)(s).Select((*html.Node)(n))
-	nArray := make([]*Element, len(nodes))
-	for i := range len(nodes) {
-		nArray[i] = (*Element)(nodes[i])
-	}
-	return nArray
-}
+// // Select selects the nodes that match the selector.
+// func (s *Selector) Select(n *Element) []*Element {
+// 	nodes := (*css.Selector)(s).Select((*html.Node)(n))
+// 	nArray := make([]*Element, len(nodes))
+// 	for i := range len(nodes) {
+// 		nArray[i] = (*Element)(nodes[i])
+// 	}
+// 	return nArray
+// }
 
-// HtmlParsePage parses the HTML page from the given reader.
-func HtmlParsePage(s io.Reader) (*Element, error) {
+// ParseHtml parses the HTML page from the given reader.
+func ParseHtml(s io.Reader) (*Document, error) {
 	n, err := html.Parse(s)
-	return (*Element)(n), err
+	return (*Document)(n), err
 }
 
-// HtmlParsePageString parses the HTML page from the given string.
-func HtmlParsePageString(s string) (*Element, error) {
-	return HtmlParsePage(strings.NewReader(s))
-}
+// // HtmlParsePageString parses the HTML page from the given string.
+// func HtmlParseDocumentString(s string) (*Document, error) {
+// 	return HtmlParseDocument(strings.NewReader(s))
+// }
 
-// HtmlParseFragment parses the HTML fragment with node context from the given reader.
-func HtmlParseFragment(s io.Reader, node *Element) ([]*Element, error) {
+// ParseHtmlFragment parses the HTML fragment with node context from the given reader.
+func ParseHtmlFragment(s io.Reader, node *Element) ([]*Element, error) {
 	n, err := html.ParseFragment(s, (*html.Node)(node))
 
 	nodes := make([]*Element, len(n))
@@ -308,9 +341,9 @@ func HtmlParseFragment(s io.Reader, node *Element) ([]*Element, error) {
 }
 
 // HtmlParseFragmentString parses the HTML fragment with node context from the given string.
-func HtmlParseFragmentString(s string, node *Element) ([]*Element, error) {
-	return HtmlParseFragment(strings.NewReader(s), node)
-}
+// func HtmlParseFragmentString(s string, node *Element) ([]*Element, error) {
+// 	return HtmlParseFragment(strings.NewReader(s), node)
+// }
 
 // HasRoot returns true if the node has the given root node as an ancestor.
 func (n *Element) HasRoot(root *Element) bool {
@@ -322,11 +355,11 @@ func (n *Element) HasRoot(root *Element) bool {
 	return false
 }
 
-// Query return iter.Seq[*Element] delivers the nodes that match the selector.
-func (n *Element) Query(selector string) func(yield func(c *Element) bool) {
-	s := CssMustParse(selector)
+func queryNode(n *html.Node, selector string) func(yield func(c *Element) bool) {
+	sel := CssMustParse(selector)
 	return func(yield func(c *Element) bool) {
-		for _, e := range s.Select(n) {
+		nodes := (*css.Selector)(sel).Select((*html.Node)(n))
+		for _, e := range nodes {
 			if !yield((*Element)(e)) {
 				return
 			}
@@ -334,18 +367,34 @@ func (n *Element) Query(selector string) func(yield func(c *Element) bool) {
 	}
 }
 
-// InputText return iter.Seq[*Element] delivers the input text nodes that match the selector.
-func (n *Element) InputText(selector string) func(yield func(c *Element) bool) {
-	sel := CssMustParse(selector)
+// Query return iter.Seq[*Element] delivers the nodes that match the selector.
+func (d *Document) Query(selector string) func(yield func(c *Element) bool) {
+	return queryNode((*html.Node)(d), selector)
+}
+
+func (e *Element) Query(selector string) func(yield func(c *Element) bool) {
+	return queryNode((*html.Node)(e), selector)
+}
+
+func inputText(n *html.Node, selector string) func(yield func(c *Element) bool) {
 	return func(yield func(c *Element) bool) {
-		for _, e := range sel.Select(n) {
-			if e.DataAtom == atom.Input && e.HasAttrValueLower("type", "text") {
-				if !yield((*Element)(e)) {
+		for i := range queryNode(n, selector) {
+			if i.DataAtom == atom.Input && i.HasAttrValueLower("type", "text") {
+				if !yield(i) {
 					return
 				}
 			}
 		}
 	}
+}
+
+// InputText return iter.Seq[*Element] delivers the input text nodes that match the selector.
+func (d *Document) InputText(selector string) func(yield func(c *Element) bool) {
+	return inputText((*html.Node)(d), selector)
+}
+
+func (e *Element) InputText(selector string) func(yield func(c *Element) bool) {
+	return inputText((*html.Node)(e), selector)
 }
 
 // HasAttrValue returns true if the node has an attribute with the given key and value.
@@ -359,13 +408,24 @@ func (n *Element) HasAttrValueLower(key, val string) bool {
 }
 
 // Render renders the node to the given writer.
-func (n *Element) Render(w io.Writer, checker ...Checker) error {
+func (d *Document) Render(w io.Writer, checker ...Checker) error {
+	for html := range d.Query("html") {
+		for _, c := range checker {
+			if err := c(html); err != nil {
+				return err
+			}
+		}
+	}
+	return html.Render(w, (*html.Node)(d))
+}
+
+func (e *Element) Render(w io.Writer, checker ...Checker) error {
 	for _, c := range checker {
-		if err := c(n); err != nil {
+		if err := c(e); err != nil {
 			return err
 		}
 	}
-	return html.Render(w, (*html.Node)(n))
+	return html.Render(w, (*html.Node)(e))
 }
 
 // GetAttr returns the value of the attribute with the given key.
@@ -425,9 +485,9 @@ func IDHasBlankCheck(n *Element) error {
 	return nil
 }
 
-// TypeString returns the string representation of the node type.
-func TypeString(n *Element) string {
-	switch n.Type {
+// typeString returns the string representation of the node type.
+func typeString(t html.NodeType) string {
+	switch t {
 	case html.ErrorNode:
 		return "Error"
 	case html.TextNode:
@@ -446,13 +506,40 @@ func TypeString(n *Element) string {
 	return "NoType"
 }
 
-// DumpNode prints the node to the standard output.
-func DumpNode(n *Element, indent int, mark string) {
+func dumpNode(n *html.Node, indent int, mark string) {
 	if n == nil {
 		return
 	}
 	fmt.Printf("T55: %s%*s", mark, indent, "")
-	fmt.Println(TypeString(n), ">"+strings.ReplaceAll(n.Data, "\n", "<LF>")+"<")
-	DumpNode((*Element)(n.FirstChild), indent+2, "C")
-	DumpNode((*Element)(n.NextSibling), indent, "S")
+	fmt.Println(typeString(n.Type), ">"+strings.ReplaceAll(n.Data, "\n", "<LF>")+"<")
+	dumpNode(n.FirstChild, indent+2, "C")
+	dumpNode(n.NextSibling, indent, "S")
+}
+
+// DumpDocument prints the node to the standard output.
+func DumpDocument(n *Document, indent int, mark string) {
+	dumpNode((*html.Node)(n), indent, mark)
+}
+
+func DumpElement(n *Element, indent int, mark string) {
+	dumpNode((*html.Node)(n), indent, mark)
+}
+
+func dumpNode2(d *html.Node, indent int, mark string) {
+	if d == nil {
+		return
+	}
+	fmt.Printf("T55: %s%*s", mark, indent, "")
+	fmt.Println(typeString(d.Type), "<"+strings.ReplaceAll(d.Data, "\n", "<LF>")+">")
+	for _, a := range d.Attr {
+		fmt.Printf("T468: %s%*s", mark, indent+2, "")
+		fmt.Println("Attr", a.Key, a.Val)
+	}
+	dumpNode2(d.FirstChild, indent+2, "C")
+	dumpNode2(d.NextSibling, indent, "S")
+}
+
+// DumpNode2 prints the node to the standard output.
+func DumpDocument2(d *Document, indent int, mark string) {
+	dumpNode2((*html.Node)(d), indent, mark)
 }
