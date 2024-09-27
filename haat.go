@@ -74,19 +74,19 @@ func (c *Comment) ParentElement() *Element {
 }
 
 // ClearContents removes all children of the node.
-func (n *Element) ClearContents() *Element {
-	bn := (*html.Node)(n)
+func (e *Element) ClearContents() *Element {
+	bn := (*html.Node)(e)
 	for c := bn.FirstChild; c != nil; c = bn.FirstChild {
 		bn.RemoveChild(c)
 	}
-	return n
+	return e
 }
 
 // C sets the children of the node to the given nodes.
-func (n *Element) C(childs ...ElementChild) *Element {
-	n.ClearContents()
-	n.AppendC(childs...)
-	return n
+func (e *Element) C(childs ...ElementChild) *Element {
+	e.ClearContents()
+	e.AppendC(childs...)
+	return e
 }
 
 func convertNode(n Node) *html.Node {
@@ -211,7 +211,7 @@ func Attr(key, value string) Attribute {
 
 // A replaces all attributes with the attributes specified in the arguments.
 // If there are duplicate keys, it sets the latter value.
-func (n *Element) A(attrs ...Attribute) *Element {
+func (e *Element) A(attrs ...Attribute) *Element {
 	slices.SortStableFunc(attrs, func(a, b Attribute) int {
 		return strings.Compare(lower(a.Key), lower(b.Key))
 	})
@@ -228,25 +228,25 @@ func (n *Element) A(attrs ...Attribute) *Element {
 		}
 	}
 
-	n.Attr = newAttrs
-	return n
+	e.Attr = newAttrs
+	return e
 }
 
 // SetA appends the given attributes to the attributes of the node.
 // If keys are already in the attributes of the node, the values are overwritten.
-func (n *Element) SetA(attr ...Attribute) *Element {
+func (e *Element) SetA(attr ...Attribute) *Element {
 	var attrs []Attribute
-	for _, a := range n.Attr {
+	for _, a := range e.Attr {
 		attrs = append(attrs, Attribute(a))
 	}
-	return n.A(slices.Concat(attrs, attr)...)
+	return e.A(slices.Concat(attrs, attr)...)
 }
 
 // AppendA appends the given attributes to the attributes of the node.
 // No attribute duplication check is performed.
-func (n *Element) AppendA(attr Attribute) *Element {
-	n.Attr = append(n.Attr, html.Attribute{Key: attr.Key, Val: attr.Val})
-	return n
+func (e *Element) AppendA(attr Attribute) *Element {
+	e.Attr = append(e.Attr, html.Attribute{Key: attr.Key, Val: attr.Val})
+	return e
 }
 
 // AttrHref creates a new attribute with the key "href" and the value of the given URL.
@@ -261,12 +261,12 @@ func AttrID(id string) Attribute {
 
 // SetClasses setsthe given class to the class attribute of the node.
 // No class duplication check is performed.
-func (n *Element) SetClasses(class ...string) *Element {
-	old := n.GetAttr("class")
+func (e *Element) SetClasses(class ...string) *Element {
+	old := e.GetAttr("class")
 	if old == "" {
-		return n.SetA(Attr("class", strings.Join(class, " ")))
+		return e.SetA(Attr("class", strings.Join(class, " ")))
 	}
-	return n.SetA(Attr("class", strings.Join(slices.Concat(strings.Split(old, " "), class), " ")))
+	return e.SetA(Attr("class", strings.Join(slices.Concat(strings.Split(old, " "), class), " ")))
 }
 
 // JsLetExpr creates a JavaScript let statement with the given name and value.
@@ -308,26 +308,12 @@ func CssMustParse(s string) *Selector {
 	return (*Selector)(css.MustParse(s))
 }
 
-// // Select selects the nodes that match the selector.
-// func (s *Selector) Select(n *Element) []*Element {
-// 	nodes := (*css.Selector)(s).Select((*html.Node)(n))
-// 	nArray := make([]*Element, len(nodes))
-// 	for i := range len(nodes) {
-// 		nArray[i] = (*Element)(nodes[i])
-// 	}
-// 	return nArray
-// }
-
 // ParseHtml parses the HTML page from the given reader.
 func ParseHtml(s io.Reader) (*Document, error) {
 	n, err := html.Parse(s)
 	return (*Document)(n), err
 }
 
-// // HtmlParsePageString parses the HTML page from the given string.
-// func HtmlParseDocumentString(s string) (*Document, error) {
-// 	return HtmlParseDocument(strings.NewReader(s))
-// }
 
 // ParseHtmlFragment parses the HTML fragment with node context from the given reader.
 func ParseHtmlFragment(s io.Reader, node *Element) ([]*Element, error) {
@@ -340,14 +326,9 @@ func ParseHtmlFragment(s io.Reader, node *Element) ([]*Element, error) {
 	return nodes, err
 }
 
-// HtmlParseFragmentString parses the HTML fragment with node context from the given string.
-// func HtmlParseFragmentString(s string, node *Element) ([]*Element, error) {
-// 	return HtmlParseFragment(strings.NewReader(s), node)
-// }
-
 // HasRoot returns true if the node has the given root node as an ancestor.
-func (n *Element) HasRoot(root *Element) bool {
-	for p := n.Parent; p != nil; p = p.Parent {
+func (e *Element) HasRoot(root *Element) bool {
+	for p := e.Parent; p != nil; p = p.Parent {
 		if p == (*html.Node)(root) {
 			return true
 		}
@@ -398,8 +379,8 @@ func (e *Element) InputText(selector string) func(yield func(c *Element) bool) {
 }
 
 // HasAttrValue returns true if the node has an attribute with the given key and value.
-func (n *Element) HasAttrValueLower(key, val string) bool {
-	for _, a := range n.Attr {
+func (e *Element) HasAttrValueLower(key, val string) bool {
+	for _, a := range e.Attr {
 		if a.Key == lower(key) && lower(a.Val) == lower(val) {
 			return true
 		}
@@ -429,8 +410,8 @@ func (e *Element) Render(w io.Writer, checker ...Checker) error {
 }
 
 // GetAttr returns the value of the attribute with the given key.
-func (n *Element) GetAttr(key string) string {
-	for _, a := range n.Attr {
+func (e *Element) GetAttr(key string) string {
+	for _, a := range e.Attr {
 		if a.Key == key {
 			return a.Val
 		}
@@ -439,8 +420,8 @@ func (n *Element) GetAttr(key string) string {
 }
 
 // ID returns the value of the id attribute.
-func (n *Element) ID() string {
-	for _, a := range n.Attr {
+func (e *Element) ID() string {
+	for _, a := range e.Attr {
 		if a.Key == "id" {
 			return a.Val
 		}
@@ -452,9 +433,9 @@ func (n *Element) ID() string {
 type Checker func(*Element) error
 
 // IDDuplicateCheck checks if the node has duplicate id attributes.
-func IDDuplicateCheck(n *Element) error {
+func IDDuplicateCheck(e *Element) error {
 	ids := map[string]struct{}{}
-	for e := range n.Query("[id]") {
+	for e := range e.Query("[id]") {
 		id := e.ID()
 		if _, ok := ids[id]; ok {
 			return fmt.Errorf("duplicate id: %s", id)
@@ -465,8 +446,8 @@ func IDDuplicateCheck(n *Element) error {
 }
 
 // IDMissingCheck checks if the node has id without value.
-func IDMissingCheck(n *Element) error {
-	for e := range n.Query("[id]") {
+func IDMissingCheck(e *Element) error {
+	for e := range e.Query("[id]") {
 		if e.ID() == "" {
 			return fmt.Errorf("missing id")
 		}
@@ -475,8 +456,8 @@ func IDMissingCheck(n *Element) error {
 }
 
 // IDHasBlankCheck checks if the node has id with blank.
-func IDHasBlankCheck(n *Element) error {
-	for e := range n.Query("[id]") {
+func IDHasBlankCheck(e *Element) error {
+	for e := range e.Query("[id]") {
 		id := e.ID()
 		if strings.Contains(id, " ") {
 			return fmt.Errorf("id has blank: %s", id)
@@ -517,26 +498,26 @@ func dumpNode(n *html.Node, indent int, mark string) {
 }
 
 // DumpDocument prints the node to the standard output.
-func DumpDocument(n *Document, indent int, mark string) {
-	dumpNode((*html.Node)(n), indent, mark)
+func DumpDocument(d *Document, indent int, mark string) {
+	dumpNode((*html.Node)(d), indent, mark)
 }
 
-func DumpElement(n *Element, indent int, mark string) {
-	dumpNode((*html.Node)(n), indent, mark)
+func DumpElement(e *Element, indent int, mark string) {
+	dumpNode((*html.Node)(e), indent, mark)
 }
 
-func dumpNode2(d *html.Node, indent int, mark string) {
-	if d == nil {
+func dumpNode2(n *html.Node, indent int, mark string) {
+	if n == nil {
 		return
 	}
 	fmt.Printf("T55: %s%*s", mark, indent, "")
-	fmt.Println(typeString(d.Type), "<"+strings.ReplaceAll(d.Data, "\n", "<LF>")+">")
-	for _, a := range d.Attr {
+	fmt.Println(typeString(n.Type), "<"+strings.ReplaceAll(n.Data, "\n", "<LF>")+">")
+	for _, a := range n.Attr {
 		fmt.Printf("T468: %s%*s", mark, indent+2, "")
 		fmt.Println("Attr", a.Key, a.Val)
 	}
-	dumpNode2(d.FirstChild, indent+2, "C")
-	dumpNode2(d.NextSibling, indent, "S")
+	dumpNode2(n.FirstChild, indent+2, "C")
+	dumpNode2(n.NextSibling, indent, "S")
 }
 
 // DumpNode2 prints the node to the standard output.
