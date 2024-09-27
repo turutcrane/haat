@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	h, err := haat.HtmlParsePageString(`
+	h, err := haat.ParseHtml(strings.NewReader(`
 <!DOCTYPE html>
 <html>
 <head>
@@ -24,7 +24,7 @@ func main() {
 Hello <span id="pkgname"></span>!!
 </body>
 </html>
-`)
+`))
 	if err != nil {
 		log.Panicln(err)
 	}
