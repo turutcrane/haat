@@ -274,7 +274,7 @@ func JsLetString(name, val string) *Text {
 	return T(fmt.Sprintf("let %s = \"%s\";", template.JSEscapeString(name), template.JSEscapeString(val)))
 }
 
-// JsLetString creates a JavaScript let statement with the given name and value.
+// JsLetInt creates a JavaScript let statement with the given name and value.
 func JsLetInt(name string, val int) *Text {
 	return T(fmt.Sprintf("let %s = %d;", template.JSEscapeString(name), val))
 }
