@@ -269,19 +269,24 @@ func (e *Element) SetClasses(class ...string) *Element {
 	return e.SetA(Attr("class", strings.Join(slices.Concat(strings.Split(old, " "), class), " ")))
 }
 
-// JsLetString creates a JavaScript let statement with the given name and value.
+// JsLetString creates a JavaScript let statement with the given name and string value.
 func JsLetString(name, val string) *Text {
 	return T(fmt.Sprintf("let %s = \"%s\";", template.JSEscapeString(name), template.JSEscapeString(val)))
 }
 
-// JsLetInt creates a JavaScript let statement with the given name and value.
+// JsLetInt creates a JavaScript let statement with the given name and int value.
 func JsLetInt(name string, val int) *Text {
 	return T(fmt.Sprintf("let %s = %d;", template.JSEscapeString(name), val))
 }
 
-// JsConstString creates a JavaScript const statement with the given name and value.
+// JsConstString creates a JavaScript const statement with the given name and string value.
 func JsConstString(name, val string) *Text {
 	return T(fmt.Sprintf("const %s = \"%s\";", template.JSEscapeString(name), template.JSEscapeString(val)))
+}
+
+// JsConstInt creates a JavaScript const statement with the given name and int value.
+func JsConstInt(name string, val int) *Text {
+	return T(fmt.Sprintf("const %s = %d;", template.JSEscapeString(name), val))
 }
 
 // Lf creates a new text node with a line feed.
