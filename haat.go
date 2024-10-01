@@ -129,7 +129,7 @@ func Remove(n Node) {
 func (e *Element) RemoveAttr(key string) *Element {
 	attr := make([]html.Attribute, 0, len(e.Attr))
 	for _, a := range e.Attr {
-		if a.Key != key {
+		if a.Key != lower(key) {
 			attr = append(attr, a)
 		}
 	}

@@ -82,7 +82,7 @@ func TestRemoveAttr(t *testing.T) {
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
-	ht[0].RemoveAttr("xxx")
+	ht[0].RemoveAttr("Xxx")
 
 	var buf bytes.Buffer
 	if err := ht[0].Render(&buf); err != nil {
