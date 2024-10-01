@@ -242,6 +242,14 @@ func (e *Element) SetA(attr ...Attribute) *Element {
 	return e.A(slices.Concat(attrs, attr)...)
 }
 
+// SetBoolA appends the given boolean attributes to the attributes of the node or removes them.
+func (e *Element) SetBoolA(key string, v bool) *Element {
+	if v {
+		return e.SetA(Attr(key, ""))
+	}
+	return e.RemoveAttr(key)
+}
+
 // AppendA appends the given attributes to the attributes of the node.
 // No attribute duplication check is performed.
 func (e *Element) AppendA(attr Attribute) *Element {
@@ -259,14 +267,14 @@ func AttrID(id string) Attribute {
 	return Attr("id", id)
 }
 
-// SetClasses setsthe given class to the class attribute of the node.
+// SetClasses sets the given class to the class attribute of the node.
 // No class duplication check is performed.
-func (e *Element) SetClasses(class ...string) *Element {
+func (e *Element) SetClasses(classes ...string) *Element {
 	old := e.GetAttr("class")
 	if old == "" {
-		return e.SetA(Attr("class", strings.Join(class, " ")))
+		return e.SetA(Attr("class", strings.Join(classes, " ")))
 	}
-	return e.SetA(Attr("class", strings.Join(slices.Concat(strings.Split(old, " "), class), " ")))
+	return e.SetA(Attr("class", strings.Join(slices.Concat(strings.Split(old, " "), classes), " ")))
 }
 
 // JsLetString creates a JavaScript let statement with the given name and string value.
@@ -335,7 +343,7 @@ func ParseHtmlFragment(s io.Reader, node *Element) ([]*Element, error) {
 	return nodes, err
 }
 
-// HasRoot returns true if the node has the given root node as an ancestor.
+// HasRoot returns true if the node has the given root node as parent.
 func (e *Element) HasRoot(root *Element) bool {
 	for p := e.Parent; p != nil; p = p.Parent {
 		if p == (*html.Node)(root) {
