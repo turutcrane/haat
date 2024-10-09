@@ -22,9 +22,7 @@ func main() {
 </head>
 <body>
 Hello <span id="pkgname"></span>!!
-</body>
-</html>
-`))
+</body></html>`))
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -42,7 +40,5 @@ Output:
 </head>
 <body>
 Hello <span id="pkgname">haat</span>!!
-
-
 </body></html>
 ```
