@@ -251,13 +251,6 @@ func (e *Element) SetBoolA(key string, v bool) *Element {
 	return e.RemoveAttr(key)
 }
 
-// AppendA appends the given attributes to the attributes of the node.
-// No attribute duplication check is performed.
-func (e *Element) AppendA(attr Attribute) *Element {
-	e.Attr = append(e.Attr, html.Attribute{Key: attr.Key, Val: attr.Val})
-	return e
-}
-
 // AttrHref creates a new attribute with the key "href" and the value of the given URL.
 func AttrHref(u url.URL) Attribute {
 	return Attr("href", u.String())
@@ -269,13 +262,15 @@ func AttrID(id string) Attribute {
 }
 
 // SetClasses sets the given class to the class attribute of the node.
-// No class duplication check is performed.
+// Class duplication check is performed.
 func (e *Element) SetClasses(classes ...string) *Element {
 	old := e.GetAttr("class")
 	if old == "" {
 		return e.SetA(Attr("class", strings.Join(classes, " ")))
 	}
-	return e.SetA(Attr("class", strings.Join(slices.Concat(strings.Split(old, " "), classes), " ")))
+	newClasses := slices.Concat(strings.Split(old, " "), classes)
+	slices.Sort(newClasses)
+	return e.SetA(Attr("class", strings.Join(slices.Compact(newClasses), " ")))
 }
 
 // JsLetString creates a JavaScript let statement with the given name and string value.
@@ -385,45 +380,41 @@ func (e *Element) HasRoot(root *Element) bool {
 	return false
 }
 
-func queryNode(n *html.Node, selector string) func(yield func(c *Element) bool) {
+func queryNode(n *html.Node, selector string) []*Element {
 	sel := CssMustParse(selector)
-	return func(yield func(c *Element) bool) {
-		nodes := (*css.Selector)(sel).Select((*html.Node)(n))
-		for _, e := range nodes {
-			if !yield((*Element)(e)) {
-				return
-			}
-		}
+	nodes := (*css.Selector)(sel).Select((*html.Node)(n))
+	elements := make([]*Element, len(nodes))
+	for i, e := range nodes {
+		elements[i] = (*Element)(e)
 	}
+	return elements
 }
 
 // Query return iter.Seq[*Element] delivers the nodes that match the selector.
-func (d *Document) Query(selector string) func(yield func(c *Element) bool) {
+func (d *Document) Query(selector string) []*Element {
 	return queryNode((*html.Node)(d), selector)
 }
 
-func (e *Element) Query(selector string) func(yield func(c *Element) bool) {
+func (e *Element) Query(selector string) []*Element {
 	return queryNode((*html.Node)(e), selector)
 }
 
-func inputText(n *html.Node, selector string) func(yield func(c *Element) bool) {
-	return func(yield func(c *Element) bool) {
-		for i := range queryNode(n, selector) {
-			if i.DataAtom == atom.Input && i.HasAttrValueLower("type", "text") {
-				if !yield(i) {
-					return
-				}
-			}
+func inputText(n *html.Node, selector string) []*Element {
+	elements := make([]*Element, 0)
+	for _, i := range queryNode(n, selector) {
+		if i.DataAtom == atom.Input && i.HasAttrValueLower("type", "text") {
+			elements = append(elements, i)
 		}
 	}
+	return elements
 }
 
 // InputText return iter.Seq[*Element] delivers the input text nodes that match the selector.
-func (d *Document) InputText(selector string) func(yield func(c *Element) bool) {
+func (d *Document) InputText(selector string) []*Element {
 	return inputText((*html.Node)(d), selector)
 }
 
-func (e *Element) InputText(selector string) func(yield func(c *Element) bool) {
+func (e *Element) InputText(selector string) []*Element {
 	return inputText((*html.Node)(e), selector)
 }
 
@@ -439,7 +430,7 @@ func (e *Element) HasAttrValueLower(key, val string) bool {
 
 // Render renders the node to the given writer.
 func (d *Document) Render(w io.Writer, checker ...Checker) error {
-	for html := range d.Query("html") {
+	for _, html := range d.Query("html") {
 		for _, c := range checker {
 			if err := c(html); err != nil {
 				return err
@@ -484,7 +475,7 @@ type Checker func(*Element) error
 // IDDuplicateCheck checks if the node has duplicate id attributes.
 func IDDuplicateCheck(e *Element) error {
 	ids := map[string]struct{}{}
-	for e := range e.Query("[id]") {
+	for _, e := range e.Query("[id]") {
 		id := e.ID()
 		if _, ok := ids[id]; ok {
 			return fmt.Errorf("duplicate id: %s", id)
@@ -496,7 +487,7 @@ func IDDuplicateCheck(e *Element) error {
 
 // IDMissingCheck checks if the node has id without value.
 func IDMissingCheck(e *Element) error {
-	for e := range e.Query("[id]") {
+	for _, e := range e.Query("[id]") {
 		if e.ID() == "" {
 			return fmt.Errorf("missing id")
 		}
@@ -506,7 +497,7 @@ func IDMissingCheck(e *Element) error {
 
 // IDHasBlankCheck checks if the node has id with blank.
 func IDHasBlankCheck(e *Element) error {
-	for e := range e.Query("[id]") {
+	for _, e := range e.Query("[id]") {
 		id := e.ID()
 		if strings.Contains(id, " ") {
 			return fmt.Errorf("id has blank: %s", id)

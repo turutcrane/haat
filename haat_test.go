@@ -10,17 +10,15 @@ import (
 
 // Clone メソッド をテストする
 func TestClone(t *testing.T) {
-	ht, err := ParseHtml(strings.NewReader(`
-<!doctype html>
-<html>
-<head>
+	html := strings.NewReader(`<!doctype html><html><head>
 <title>Hello haat</title>
 </head>
 <body>
 Hello <span id="pkgname"></span>!!
-</body>
-</html>
-`))
+</body></html>`,
+	)
+
+	ht, err := ParseHtml(html)
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -40,7 +38,7 @@ Hello <span id="pkgname"></span>!!
 }
 
 func TestSetClasses(t *testing.T) {
-	ht, err := ParseHtmlFragment(strings.NewReader(`<p id="foo" class="bar baz">Hello</p>`), E(atom.Div))
+	ht, err := ParseHtmlFragment(strings.NewReader(`<p id="foo" class="baz bar">Hello</p>`), E(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -51,7 +49,7 @@ func TestSetClasses(t *testing.T) {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
 
-	expected := `<p class="bar baz bar baz" id="foo">Hello</p>`
+	expected := `<p class="bar baz" id="foo">Hello</p>`
 	actual := buf.String()
 	if actual != expected {
 		t.Errorf("got: %v\nwant: %v", actual, expected)

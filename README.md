@@ -26,7 +26,7 @@ Hello <span id="pkgname"></span>!!
 	if err != nil {
 		log.Panicln(err)
 	}
-	for span := range h.Query("span#pkgname") {
+	for _, span := range h.Query("span#pkgname") {
 		span.C(haat.T("haat"))
 	}
 	h.Render(os.Stdout)
