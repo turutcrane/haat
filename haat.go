@@ -348,9 +348,15 @@ func T(text string) *Text {
 
 type Selector css.Selector
 
-// CssMustParse parses the given CSS selector and panics if it fails.
-func CssMustParse(s string) *Selector {
+// SelectorMustParse parses the given CSS selector and panics if it fails.
+func SelectorMustParse(s string) *Selector {
 	return (*Selector)(css.MustParse(s))
+}
+
+// SelectorParse parse the givent CSS selector
+func SelectorParse(s string) (*Selector, error) {
+	sel, err := css.Parse(s)
+	return (*Selector)(sel), err
 }
 
 // ParseHtml parses the HTML page from the given reader.
@@ -381,8 +387,12 @@ func (e *Element) HasRoot(root *Element) bool {
 }
 
 func queryNode(n *html.Node, selector string) []*Element {
-	sel := CssMustParse(selector)
-	nodes := (*css.Selector)(sel).Select((*html.Node)(n))
+
+	return queryNodeBySelector(n, (*css.Selector)(SelectorMustParse(selector)))
+}
+
+func queryNodeBySelector(n *html.Node, sel *css.Selector) []*Element {
+	nodes := sel.Select(n)
 	elements := make([]*Element, len(nodes))
 	for i, e := range nodes {
 		elements[i] = (*Element)(e)
@@ -390,13 +400,22 @@ func queryNode(n *html.Node, selector string) []*Element {
 	return elements
 }
 
-// Query return iter.Seq[*Element] delivers the nodes that match the selector.
+// Query return the nodes that match the selector.
 func (d *Document) Query(selector string) []*Element {
 	return queryNode((*html.Node)(d), selector)
 }
 
 func (e *Element) Query(selector string) []*Element {
 	return queryNode((*html.Node)(e), selector)
+}
+
+// QeurySelector return the all nodes that match the selector.
+func (d *Document) QuerySelector(selector *Selector) []*Element {
+	return queryNodeBySelector((*html.Node)(d), (*css.Selector)(selector))
+}
+
+func (e *Element) QuerySelector(selector *Selector) []*Element {
+	return queryNodeBySelector((*html.Node)(e), (*css.Selector)(selector))
 }
 
 func inputText(n *html.Node, selector string) []*Element {
@@ -409,7 +428,7 @@ func inputText(n *html.Node, selector string) []*Element {
 	return elements
 }
 
-// InputText return iter.Seq[*Element] delivers the input text nodes that match the selector.
+// InputText return the input text nodes that match the selector.
 func (d *Document) InputText(selector string) []*Element {
 	return inputText((*html.Node)(d), selector)
 }
