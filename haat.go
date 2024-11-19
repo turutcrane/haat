@@ -1,9 +1,7 @@
 package haat
 
 import (
-	"encoding/json"
 	"fmt"
-	"html/template"
 	"io"
 	"net/url"
 	"slices"
@@ -273,60 +271,9 @@ func (e *Element) SetClasses(classes ...string) *Element {
 	return e.SetA(Attr("class", strings.Join(slices.Compact(newClasses), " ")))
 }
 
-// JsLetString creates a JavaScript let statement with the given name and string value.
-func JsLetString(name, val string) *Text {
-	return T(fmt.Sprintf("let %s = \"%s\";", template.JSEscapeString(name), template.JSEscapeString(val)))
-}
-
-// JsLetInt creates a JavaScript let statement with the given name and int value.
-func JsLetInt(name string, val int) *Text {
-	return T(fmt.Sprintf("let %s = %d;", template.JSEscapeString(name), val))
-}
-
-// JsLetBool creates a JavaScript let statement with the given name and bool value.
-func JsLetBool(name string, val bool) *Text {
-	return T(fmt.Sprintf("let %s = %t;", template.JSEscapeString(name), val))
-}
-
-// JsLetJson creates a JavaScript let statement with the given name and JSON value.
-func JsLetJson(name string, val any) (*Text, error) {
-	// val を json.Marshal で文字列に変換する
-	json, err := json.Marshal(val)
-	if err == nil {
-		return T(fmt.Sprintf("let %s = %s;", template.JSEscapeString(name), json)), nil
-	}
-
-	return nil, err
-}
-
-// JsConstString creates a JavaScript const statement with the given name and string value.
-func JsConstString(name, val string) *Text {
-	return T(fmt.Sprintf("const %s = \"%s\";", template.JSEscapeString(name), template.JSEscapeString(val)))
-}
-
-// JsConstInt creates a JavaScript const statement with the given name and int value.
-func JsConstInt(name string, val int) *Text {
-	return T(fmt.Sprintf("const %s = %d;", template.JSEscapeString(name), val))
-}
-
-// JsConstBool creates a JavaScript const statement with the given name and bool value.
-func JsConstBool(name string, val bool) *Text {
-	return T(fmt.Sprintf("const %s = %t;", template.JSEscapeString(name), val))
-}
-
-// JsConstJson creates a JavaScript const statement with the given name and JSON value.
-func JsConstJson(name string, val any) (*Text, error) {
-	// val を json.Marshal で文字列に変換する
-	json, err := json.Marshal(val)
-	if err == nil {
-		return T(fmt.Sprintf("const %s = %s;", template.JSEscapeString(name), json)), nil
-	}
-	return nil, err
-}
-
 // Lf creates a new text node with a line feed.
-func Lf() *Text {
-	return T("\n")
+func Lf() string {
+	return "\n"
 }
 
 // E creates a new element node with the given atom.
@@ -339,10 +286,10 @@ func E(a atom.Atom) *Element {
 }
 
 // T creates a new text node with the given text.
-func T(text string) *Text {
+func T(text ...string) *Text {
 	return &Text{
 		Type: html.TextNode,
-		Data: text,
+		Data: strings.Join(text, ""),
 	}
 }
 
