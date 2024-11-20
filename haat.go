@@ -3,6 +3,7 @@ package haat
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"slices"
 	"strings"
@@ -25,6 +26,7 @@ func lower(s string) string {
 type Document html.Node
 type Element html.Node
 type Text html.Node
+type RawText html.Node
 type Doctype html.Node
 type Comment html.Node
 
@@ -51,6 +53,10 @@ func (t *Text) NodeType() html.NodeType {
 	return t.Type
 }
 
+func (t *RawText) NodeType() html.NodeType {
+	return t.Type
+}
+
 func (d *Doctype) NodeType() html.NodeType {
 	return d.Type
 }
@@ -65,6 +71,10 @@ func (e *Element) ParentElement() *Element {
 }
 
 func (t *Text) ParentElement() *Element {
+	return (*Element)(t.Parent)
+}
+
+func (t *RawText) ParentElement() *Element {
 	return (*Element)(t.Parent)
 }
 
@@ -97,10 +107,14 @@ func convertNode(n Node) *html.Node {
 		n0 = (*html.Node)(c)
 	case *Text:
 		n0 = (*html.Node)(c)
+	case *RawText:
+		n0 = (*html.Node)(c)
 	case *Doctype:
 		n0 = (*html.Node)(c)
 	case *Comment:
 		n0 = (*html.Node)(c)
+	default:
+		log.Panicln("no case match")
 	}
 
 	return n0
@@ -276,8 +290,8 @@ func Lf() string {
 	return "\n"
 }
 
-// E creates a new element node with the given atom.
-func E(a atom.Atom) *Element {
+// Elem creates a new element node with the given atom.
+func Elem(a atom.Atom) *Element {
 	return &Element{
 		Type:     html.ElementNode,
 		DataAtom: a,
@@ -289,6 +303,14 @@ func E(a atom.Atom) *Element {
 func T(text ...string) *Text {
 	return &Text{
 		Type: html.TextNode,
+		Data: strings.Join(text, ""),
+	}
+}
+
+// RawT creates a new text node with the given text.
+func RawT(text ...string) *RawText {
+	return &RawText{
+		Type: html.RawNode,
 		Data: strings.Join(text, ""),
 	}
 }

@@ -38,7 +38,7 @@ Hello <span id="pkgname"></span>!!
 }
 
 func TestSetClasses(t *testing.T) {
-	ht, err := ParseHtmlFragment(strings.NewReader(`<p id="foo" class="baz bar">Hello</p>`), E(atom.Div))
+	ht, err := ParseHtmlFragment(strings.NewReader(`<p id="foo" class="baz bar">Hello</p>`), Elem(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -57,7 +57,7 @@ func TestSetClasses(t *testing.T) {
 }
 
 func TestSetA(t *testing.T) {
-	ht, err := ParseHtmlFragment(strings.NewReader(`<p xxx="yyy" id="foo" xxx="zzz">Hello</p>`), E(atom.Div))
+	ht, err := ParseHtmlFragment(strings.NewReader(`<p xxx="yyy" id="foo" xxx="zzz">Hello</p>`), Elem(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -76,7 +76,7 @@ func TestSetA(t *testing.T) {
 }
 
 func TestRemoveAttr(t *testing.T) {
-	ht, err := ParseHtmlFragment(strings.NewReader(`<p id="foo" xxx="aaa" xxx="bbb">Hello</p>`), E(atom.Div))
+	ht, err := ParseHtmlFragment(strings.NewReader(`<p id="foo" xxx="aaa" xxx="bbb">Hello</p>`), Elem(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -95,7 +95,7 @@ func TestRemoveAttr(t *testing.T) {
 }
 
 func TestRemoveClass(t *testing.T) {
-	ht, err := ParseHtmlFragment(strings.NewReader(`<p id="foo" class="bar baz bar">Hello</p>`), E(atom.Div))
+	ht, err := ParseHtmlFragment(strings.NewReader(`<p id="foo" class="bar baz bar">Hello</p>`), Elem(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -107,6 +107,25 @@ func TestRemoveClass(t *testing.T) {
 	}
 
 	expected := `<p class="baz" id="foo">Hello</p>`
+	actual := buf.String()
+	if actual != expected {
+		t.Errorf("got: %v\nwant: %v", actual, expected)
+	}
+}
+
+func TestRawTest(t *testing.T) {
+	ht, err := ParseHtmlFragment(strings.NewReader(`<p>aaa</p>`), Elem(atom.Div))
+	if err != nil {
+		t.Errorf("got: %v\nwant: %v", err, nil)
+	}
+	ht[0].AppendC(RawT("<i>bbb</i>"))
+
+	var buf bytes.Buffer
+	if err := ht[0].Render(&buf); err != nil {
+		t.Errorf("got: %v\nwant: %v", err, nil)
+	}
+
+	expected := `<p>aaa<i>bbb</i></p>`
 	actual := buf.String()
 	if actual != expected {
 		t.Errorf("got: %v\nwant: %v", actual, expected)
