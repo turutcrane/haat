@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	h, err := haat.ParseHtml(strings.NewReader(`
+	h, err := haat.ParseHTML(strings.NewReader(`
 <!DOCTYPE html>
 <html>
 <head>

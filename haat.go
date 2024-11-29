@@ -328,14 +328,14 @@ func SelectorParse(s string) (*Selector, error) {
 	return (*Selector)(sel), err
 }
 
-// ParseHtml parses the HTML page from the given reader.
-func ParseHtml(s io.Reader) (*Document, error) {
+// ParseHTML parses the HTML page from the given reader.
+func ParseHTML(s io.Reader) (*Document, error) {
 	n, err := html.Parse(s)
 	return (*Document)(n), err
 }
 
-// ParseHtmlFragment parses the HTML fragment with node context from the given reader.
-func ParseHtmlFragment(s io.Reader, node *Element) ([]*Element, error) {
+// ParseHTMLFragment parses the HTML fragment with node context from the given reader.
+func ParseHTMLFragment(s io.Reader, node *Element) ([]*Element, error) {
 	n, err := html.ParseFragment(s, (*html.Node)(node))
 
 	nodes := make([]*Element, len(n))
