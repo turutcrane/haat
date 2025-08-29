@@ -38,7 +38,7 @@ Hello <span id="pkgname"></span>!!
 }
 
 func TestSetClasses(t *testing.T) {
-	ht, err := ParseHTMLFragment(strings.NewReader(`<p id="foo" class="baz bar">Hello</p>`), Elem(atom.Div))
+	ht, err := ParseHTMLFragment(strings.NewReader(`<p id="foo" class="baz bar">Hello</p>`), NewElement(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -57,11 +57,11 @@ func TestSetClasses(t *testing.T) {
 }
 
 func TestSetA(t *testing.T) {
-	ht, err := ParseHTMLFragment(strings.NewReader(`<p xxx="yyy" id="foo" xxx="zzz">Hello</p>`), Elem(atom.Div))
+	ht, err := ParseHTMLFragment(strings.NewReader(`<p xxx="yyy" id="foo" xxx="zzz">Hello</p>`), NewElement(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
-	ht[0].SetA(Attr("xxx", "aaa"))
+	ht[0].SetA(NewAttribute("xxx", "aaa"))
 
 	var buf bytes.Buffer
 	if err := ht[0].Render(&buf); err != nil {
@@ -76,7 +76,7 @@ func TestSetA(t *testing.T) {
 }
 
 func TestRemoveAttr(t *testing.T) {
-	ht, err := ParseHTMLFragment(strings.NewReader(`<p id="foo" xxx="aaa" xxx="bbb">Hello</p>`), Elem(atom.Div))
+	ht, err := ParseHTMLFragment(strings.NewReader(`<p id="foo" xxx="aaa" xxx="bbb">Hello</p>`), NewElement(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
@@ -95,11 +95,11 @@ func TestRemoveAttr(t *testing.T) {
 }
 
 func TestRemoveClass(t *testing.T) {
-	ht, err := ParseHTMLFragment(strings.NewReader(`<p id="foo" class="bar baz bar">Hello</p>`), Elem(atom.Div))
+	ht, err := ParseHTMLFragment(strings.NewReader(`<p id="foo" class="bar baz bar">Hello</p>`), NewElement(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}
-	ht[0].RemoveClass("bar")
+	ht[0].RemoveClasses("bar")
 
 	var buf bytes.Buffer
 	if err := ht[0].Render(&buf); err != nil {
@@ -114,7 +114,7 @@ func TestRemoveClass(t *testing.T) {
 }
 
 func TestRawTest(t *testing.T) {
-	ht, err := ParseHTMLFragment(strings.NewReader(`<p>aaa</p>`), Elem(atom.Div))
+	ht, err := ParseHTMLFragment(strings.NewReader(`<p>aaa</p>`), NewElement(atom.Div))
 	if err != nil {
 		t.Errorf("got: %v\nwant: %v", err, nil)
 	}

@@ -91,8 +91,13 @@ func (e *Element) ClearContents() *Element {
 	return e
 }
 
-// C sets the children of the node to the given nodes.
+// C is an alias for ReplaceContents.
 func (e *Element) C(childs ...ElementChild) *Element {
+	return e.ReplaceContents(childs...)
+}
+
+// ReplaceContents sets the children of the node to the given nodes.
+func (e *Element) ReplaceContents(childs ...ElementChild) *Element {
 	e.ClearContents()
 	e.AppendC(childs...)
 	return e
@@ -151,15 +156,15 @@ func (e *Element) RemoveAttr(key string) *Element {
 }
 
 // RemoveClass removes the class from the class attribute of the node.
-func (e *Element) RemoveClass(class string) *Element {
+func (e *Element) RemoveClasses(delClass ...string) *Element {
 	classes := strings.Split(e.GetAttr("class"), " ")
 	cs := make([]string, 0, len(classes))
 	for _, c := range classes {
-		if c != class {
+		if !slices.Contains(delClass, c) {
 			cs = append(cs, c)
 		}
 	}
-	e.SetA(Attr("class", strings.Join(cs, " ")))
+	e.SetA(NewAttribute("class", strings.Join(cs, " ")))
 	return e
 }
 
@@ -214,17 +219,22 @@ func (c *Comment) Clone() *Comment {
 	}
 }
 
-// Attr creates a new attribute with the given key and value.
-func Attr(key, value string) Attribute {
+// A is an alias for NewAttribute.
+func A(key, value string) Attribute {
+	return NewAttribute(key, value)
+}
+
+// NewAttribute creates a new attribute with the given key and value.
+func NewAttribute(key, value string) Attribute {
 	return (Attribute)(html.Attribute{
 		Key: lower(key),
 		Val: value,
 	})
 }
 
-// A replaces all attributes with the attributes specified in the arguments.
+// ReplaceAttrs replaces all attributes with the attributes specified in the arguments.
 // If there are duplicate keys, it sets the latter value.
-func (e *Element) A(attrs ...Attribute) *Element {
+func (e *Element) ReplaceAttrs(attrs ...Attribute) *Element {
 	slices.SortStableFunc(attrs, func(a, b Attribute) int {
 		return strings.Compare(lower(a.Key), lower(b.Key))
 	})
@@ -252,25 +262,25 @@ func (e *Element) SetA(attr ...Attribute) *Element {
 	for _, a := range e.Attr {
 		attrs = append(attrs, Attribute(a))
 	}
-	return e.A(slices.Concat(attrs, attr)...)
+	return e.ReplaceAttrs(slices.Concat(attrs, attr)...)
 }
 
 // SetBoolA appends the given boolean attributes to the attributes of the node or removes them.
 func (e *Element) SetBoolA(key string, v bool) *Element {
 	if v {
-		return e.SetA(Attr(key, ""))
+		return e.SetA(NewAttribute(key, ""))
 	}
 	return e.RemoveAttr(key)
 }
 
 // AttrHref creates a new attribute with the key "href" and the value of the given URL.
 func AttrHref(u url.URL) Attribute {
-	return Attr("href", u.String())
+	return NewAttribute("href", u.String())
 }
 
 // AttrID creates a new attribute with the key "id" and the given value.
 func AttrID(id string) Attribute {
-	return Attr("id", id)
+	return NewAttribute("id", id)
 }
 
 // SetClasses sets the given class to the class attribute of the node.
@@ -278,11 +288,11 @@ func AttrID(id string) Attribute {
 func (e *Element) SetClasses(classes ...string) *Element {
 	old := e.GetAttr("class")
 	if old == "" {
-		return e.SetA(Attr("class", strings.Join(classes, " ")))
+		return e.SetA(NewAttribute("class", strings.Join(classes, " ")))
 	}
 	newClasses := slices.Concat(strings.Split(old, " "), classes)
 	slices.Sort(newClasses)
-	return e.SetA(Attr("class", strings.Join(slices.Compact(newClasses), " ")))
+	return e.SetA(NewAttribute("class", strings.Join(slices.Compact(newClasses), " ")))
 }
 
 // Lf creates a new text node with a line feed.
@@ -291,7 +301,7 @@ func Lf() string {
 }
 
 // Elem creates a new element node with the given atom.
-func Elem(a atom.Atom) *Element {
+func NewElement(a atom.Atom) *Element {
 	return &Element{
 		Type:     html.ElementNode,
 		DataAtom: a,
@@ -299,20 +309,31 @@ func Elem(a atom.Atom) *Element {
 	}
 }
 
+func E(a atom.Atom) *Element {
+	return NewElement(a)
+}
+
 // T creates a new text node with the given text.
-func T(text ...string) *Text {
+func NewText(text ...string) *Text {
 	return &Text{
 		Type: html.TextNode,
 		Data: strings.Join(text, ""),
 	}
 }
+func T(text ...string) *Text {
+	return NewText(text...)
+}
 
 // RawT creates a new text node with the given text.
-func RawT(text ...string) *RawText {
+func NewRawText(text ...string) *RawText {
 	return &RawText{
 		Type: html.RawNode,
 		Data: strings.Join(text, ""),
 	}
+}
+
+func RawT(text ...string) *RawText {
+	return NewRawText(text...)
 }
 
 type Selector css.Selector
