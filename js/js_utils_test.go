@@ -6,11 +6,6 @@ import (
 )
 
 func TestIdentifire(t *testing.T) {
-	// Note: The current implementation of Identifire has bugs and does not
-	// correctly identify all valid JavaScript identifiers, like those starting
-	// with '_' or '$' or containing '$'. These tests are written against the
-	// ECMAScript specification and are expected to fail with the current
-	// implementation, highlighting the bugs.
 	tests := []struct {
 		name string
 		in   string
@@ -36,7 +31,7 @@ func TestIdentifire(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := IsIdentifire(tt.in); got != tt.want {
-				t.Errorf("Identifire(%q) = %v, want %v", tt.in, got, tt.want)
+				t.Errorf("IsIdentifire(%q) = %v, want %v", tt.in, got, tt.want)
 			}
 		})
 	}
@@ -62,6 +57,117 @@ func TestLetString(t *testing.T) {
 			got := LetString(tt.varName, tt.val)
 			if got != tt.want {
 				t.Errorf("LetString(%q, %q) = %q, want %q", tt.varName, tt.val, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAssignString(t *testing.T) {
+	tests := []struct {
+		name    string
+		varName string
+		val     string
+		want    string
+	}{
+		{"simple assignment", "myVar", "value", `myVar = "value";`},
+		{"property assignment", "myObj.prop", "value", `myObj.prop = "value";`},
+		{"nested property", "a.b.c", "value", `a.b.c = "value";`},
+		{"invalid identifier part", "a.1b.c", "value", `</script> add By js.AssignString: a.1b.c = "value";`},
+		{"invalid with html chars", "a.b<d.c", "value", `</script> add By js.AssignString: a.b&lt;d.c = "value";`},
+		{"value with quotes", "myVar", `he"llo`, `myVar = "he\"llo";`},
+		{"value with slashes", "myVar", `he\llo`, `myVar = "he\\llo";`},
+		{"value with script tag", "myVar", `</script>`, `myVar = "\u003C/script\u003E";`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := AssignString(tt.varName, tt.val)
+			if got != tt.want {
+				t.Errorf("AssignString(%q, %q) = %q, want %q", tt.varName, tt.val, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAssignInt(t *testing.T) {
+	tests := []struct {
+		name    string
+		varName string
+		val     int
+		want    string
+	}{
+		{"simple assignment", "myVar", 123, `myVar = 123;`},
+		{"property assignment", "myObj.prop", -45, `myObj.prop = -45;`},
+		{"invalid identifier part", "a.1b.c", 0, `</script> add By js.AssignInt: a.1b.c = 0;`},
+		{"invalid with html chars", "a.b<d.c", 99, `</script> add By js.AssignInt: a.b&lt;d.c = 99;`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := AssignInt(tt.varName, tt.val)
+			if got != tt.want {
+				t.Errorf("AssignInt(%q, %d) = %q, want %q", tt.varName, tt.val, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAssignBool(t *testing.T) {
+	tests := []struct {
+		name    string
+		varName string
+		val     bool
+		want    string
+	}{
+		{"simple assignment true", "myVar", true, `myVar = true;`},
+		{"property assignment false", "myObj.prop", false, `myObj.prop = false;`},
+		{"invalid identifier part", "a.1b.c", true, `</script> add By js.AssignBool: a.1b.c = true;`},
+		{"invalid with html chars", "a.b<d.c", false, `</script> add By js.AssignBool: a.b&lt;d.c = false;`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := AssignBool(tt.varName, tt.val)
+			if got != tt.want {
+				t.Errorf("AssignBool(%q, %v) = %q, want %q", tt.varName, tt.val, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAssignJson(t *testing.T) {
+	type myStruct struct {
+		Foo string `json:"foo"`
+	}
+
+	tests := []struct {
+		name    string
+		varName string
+		val     any
+		want    string
+		wantErr bool
+		errText string
+	}{
+		{"valid struct", "myJson", myStruct{Foo: "bar"}, `myJson = {"foo":"bar"};`, false, ""},
+		{"property assignment", "myObj.prop", myStruct{Foo: "bar"}, `myObj.prop = {"foo":"bar"};`, false, ""},
+		{"invalid identifier", "1-invalid", myStruct{Foo: "bar"}, "", true, "invalid identifire: 1-invalid"},
+		{"invalid property part", "a.1b.c", myStruct{Foo: "bar"}, "", true, "invalid identifire: a.1b.c"},
+		{"json marshal error", "myJson", make(chan int), "", true, "json: unsupported type: chan int"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := AssignJson(tt.varName, tt.val)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("AssignJson() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				if !strings.Contains(err.Error(), tt.errText) {
+					t.Errorf("AssignJson() error = %q, want to contain %q", err.Error(), tt.errText)
+				}
+			}
+			if got != tt.want {
+				t.Errorf("AssignJson() = %q, want %q", got, tt.want)
 			}
 		})
 	}
