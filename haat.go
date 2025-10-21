@@ -300,7 +300,28 @@ func Lf() string {
 	return "\n"
 }
 
-// Elem creates a new element node with the given atom.
+// NewDocument create document with head and body
+func NewDocument(head *Element, body *Element) *Document{
+	d := &html.Node{
+		Type: html.DocumentNode,
+	}
+	d.AppendChild(&html.Node{
+		Type: html.DoctypeNode,
+		Data: "html",
+	})
+	ht := &html.Node{
+		Type: html.ElementNode,
+		DataAtom: atom.Html,
+		Data: "html",
+	}
+	ht.AppendChild((*html.Node)(head))
+	ht.AppendChild((*html.Node)(body))
+	d.AppendChild(ht)
+
+	return (*Document)(d)
+}
+
+// NewElement creates a new element node with the given atom.
 func NewElement(a atom.Atom) *Element {
 	return &Element{
 		Type:     html.ElementNode,
@@ -322,6 +343,11 @@ func NewText(text ...string) *Text {
 }
 func T(text ...string) *Text {
 	return NewText(text...)
+}
+
+// SetText realaces child of element by a text
+func (e *Element) SetText(t string) {
+	e.ReplaceContents(NewText(t))
 }
 
 // RawT creates a new text node with the given text.
@@ -541,9 +567,9 @@ func dumpNode(n *html.Node, indent int, mark string) {
 		return
 	}
 	fmt.Printf("T55: %s%*s", mark, indent, "")
-	fmt.Println(typeString(n.Type), ">"+strings.ReplaceAll(n.Data, "\n", "<LF>")+"<")
+	fmt.Println(typeString(n.Type), int(n.DataAtom), ">"+strings.ReplaceAll(n.Data, "\n", "<LF>")+"<")
 	dumpNode(n.FirstChild, indent+2, "C")
-	dumpNode(n.NextSibling, indent, "S")
+	dumpNode(n.NextSibling, indent, "-")
 }
 
 // DumpDocument prints the node to the standard output.
